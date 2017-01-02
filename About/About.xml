@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Sync growth</name>
+  <author>Wishmaster</author>
+  <targetversion>0.16.1393</targetversion>
+  <description>
+	Requires HugsLib.
+
+	Helps your crops to be mature at the same time.
+  </description>
+	<url>https://ludeon.com/forums/index.php?topic=27315.0</url>
+</ModMetaData>
