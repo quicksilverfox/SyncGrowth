@@ -20,7 +20,7 @@ namespace WM.SyncGrowth
 		}
 		//public override void DefsLoaded()
 		//{
-		//	
+		//	DefDatabase<ThingDef>.GetNamed("PlantBase").thingClass = typeof(WM.SyncGrowth.Detour.Plant);
 		//}
 	}
 }

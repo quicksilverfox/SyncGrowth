@@ -4,7 +4,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace WM.SyncGrowth
+namespace WM.SyncGrowth.Detour
 {
 	public class Plant : RimWorld.Plant
 	{
@@ -24,6 +24,19 @@ namespace WM.SyncGrowth
 		[DetourMethod(typeof(RimWorld.Plant), "TickLong")]
 		public override void TickLong()
 		{
+			float growthBefore = this.Growth;
+
+			TickLong_base();
+
+			GroupsUtils.TryCreateCropsGroup(this);
+
+			if (growthBefore > this.Growth)
+				this.Growth += GroupsUtils.GrowthCorrectionFor(this);
+		}
+
+		// RimWorld.Plant
+		public void TickLong_base()
+		{
 			this.CheckTemperatureMakeLeafless();
 			if (base.Destroyed)
 			{
@@ -34,8 +47,6 @@ namespace WM.SyncGrowth
 				if (!this.HasEnoughLightToGrow)
 				{
 					this.unlitTicks += 2000;
-
-					GroupsUtils.TryCreateCropsGroup(this);
 				}
 				else
 				{
