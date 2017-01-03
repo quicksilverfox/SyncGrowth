@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using HugsLib.Source.Detour;
 using RimWorld;
 using Verse;
 
@@ -12,7 +13,7 @@ namespace WM.SyncGrowth
 		private static int lastTicked = 0;
 
 		public static List<Group> allGroups = new List<Group>();
-		public static List<Plant> allThingsInAGroup = new List<Plant>();
+		public static Dictionary<Plant, Group> allThingsInAGroup = new Dictionary<Plant, Group>();
 
 		private static void Reset()
 		{
@@ -45,7 +46,7 @@ namespace WM.SyncGrowth
 			//if (crop.Position.GetZone(crop.Map) == null && (crop.Position.GetFirstBuilding(crop.Map) == null || crop.Position.GetFirstBuilding(crop.Map).def != ThingDef.Named("HydroponicsBasin") ) )
 			//	return;
 			
-			if (allThingsInAGroup.Contains(crop))
+			if (allThingsInAGroup.ContainsKey(crop))
 				return ;
 
 			Group newGroup = new Group();
@@ -63,7 +64,7 @@ namespace WM.SyncGrowth
 
 			if (newGroup.Count > 1)
 			{
-				newGroup.SplitGroup();
+				newGroup.PostProcess();
 			}
 
 
@@ -78,14 +79,40 @@ namespace WM.SyncGrowth
 			{
 				Plant thingAtCell = cell.GetPlant(crop.Map);
 
-				if (thingAtCell != null)
+				if (thingAtCell != null && crop.GrowthRateFactor_Light == thingAtCell.GrowthRateFactor_Light && crop.GrowthRateFactor_Fertility == thingAtCell.GrowthRateFactor_Fertility)
 					Iterate(thingAtCell, group);
 			}
 		}
 
-		public static float GrowthCorrectionFor(Plant plant)
+		//public static float GrowthCorrectionFor(this Plant plant)
+		//{
+		//	if (!allThingsInAGroup.ContainsKey(plant))
+		//		return 0f;
+
+		//	Group group = allThingsInAGroup[plant];
+
+		//	return group.GrowthCorrectionFor(plant);
+		//}
+
+		public static float GrowthRateCorrection(this Plant plant)
 		{
-			return 0f;
+			if (!allThingsInAGroup.ContainsKey(plant))
+				return 1f;
+
+			Group group = allThingsInAGroup[plant];
+
+			return group.GrowthRateCorrectionFor(plant);
+			//return 0f;
+		}
+
+		public static float TicksUntilFullyGrown(this Plant plant)
+		{
+			return (int)typeof(RimWorld.Plant).GetProperty("TicksUntilFullyGrown", Helpers.AllBindingFlags).GetValue(plant, null);
+		}
+
+		public static float GrowthPerTick(this Plant plant)
+		{
+			return (int)typeof(RimWorld.Plant).GetProperty("GrowthPerTick", Helpers.AllBindingFlags).GetValue(plant, null);
 		}
 	}
 }

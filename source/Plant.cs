@@ -8,7 +8,7 @@ namespace WM.SyncGrowth.Detour
 {
 	public class Plant : RimWorld.Plant
 	{
-		private string cachedLabelMouseover 
+		private string cachedLabelMouseover
 		{
 			get
 			{
@@ -16,7 +16,24 @@ namespace WM.SyncGrowth.Detour
 			}
 			set
 			{
-				typeof(RimWorld.Plant).GetField("cachedLabelMouseover", Helpers.AllBindingFlags).SetValue(this,value);
+				typeof(RimWorld.Plant).GetField("cachedLabelMouseover", Helpers.AllBindingFlags).SetValue(this, value);
+			}
+		}
+
+		//public new int TicksUntilFullyGrown
+		//{
+		//	get
+		//	{
+		//		return (int)typeof(RimWorld.Plant).GetProperty("TicksUntilFullyGrown", Helpers.AllBindingFlags).GetValue(this,null);
+		//	}
+		//}
+
+		[DetourProperty(typeof(RimWorld.Plant), "GrowthRate", DetourProperty.Getter)]
+		public virtual float _GrowthRate
+		{
+			get
+			{
+				return (this.GrowthRateFactor_Fertility * this.GrowthRateFactor_Temperature * this.GrowthRateFactor_Light) * this.GrowthRateCorrection();
 			}
 		}
 
@@ -24,14 +41,13 @@ namespace WM.SyncGrowth.Detour
 		[DetourMethod(typeof(RimWorld.Plant), "TickLong")]
 		public override void TickLong()
 		{
-			float growthBefore = this.Growth;
-
-			TickLong_base();
+			//float growthBefore = this.Growth;
 
 			GroupsUtils.TryCreateCropsGroup(this);
 
-			if (growthBefore > this.Growth)
-				this.Growth += GroupsUtils.GrowthCorrectionFor(this);
+			//this.Growth += GroupsUtils.GrowthCorrectionFor(this) * this.GrowthRate;
+
+			TickLong_base();
 		}
 
 		// RimWorld.Plant
