@@ -57,6 +57,8 @@
     <Compile Include="Plant.cs" />
     <Compile Include="GroupsUtils.cs" />
     <Compile Include="Group.cs" />
+    <Compile Include="DebugUtils.cs" />
+    <Compile Include="MapInterface.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

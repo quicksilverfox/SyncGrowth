@@ -7,25 +7,27 @@ using Verse;
 
 namespace WM.SyncGrowth
 {
-	
+
 	public static class GroupsUtils
 	{
 		private static int lastTicked = 0;
 
+		public static List<Plant> allListedPlants = new List<Plant>();
 		public static List<Group> allGroups = new List<Group>();
 		public static Dictionary<Plant, Group> allThingsInAGroup = new Dictionary<Plant, Group>();
 
 		private static void Reset()
 		{
 			if (lastTicked + 2000 > (Find.TickManager.TicksGame))
-				return ;
+				return;
 
-			#if DEBUG
-			Log.Message("RESET ! had "+allGroups.Count+" groups of crops.");
+#if DEBUG
+			Log.Message("RESET ! had " + allGroups.Count + " groups of crops.");
 #endif
 
 			lastTicked = Find.TickManager.TicksGame;
 
+			allListedPlants.Clear();
 			allThingsInAGroup.Clear();
 			allGroups.Clear();
 
@@ -40,47 +42,64 @@ namespace WM.SyncGrowth
 		{
 			Reset();
 
-			if (crop.def.ingestible.foodType == FoodTypeFlags.Tree  || crop.def.plant.reproduces || blacklist.Contains(crop.def))
+			if (crop.def.ingestible.foodType == FoodTypeFlags.Tree || crop.def.plant.reproduces || blacklist.Contains(crop.def))
 				return;
 
 			//if (crop.Position.GetZone(crop.Map) == null && (crop.Position.GetFirstBuilding(crop.Map) == null || crop.Position.GetFirstBuilding(crop.Map).def != ThingDef.Named("HydroponicsBasin") ) )
 			//	return;
-			
-			if (allThingsInAGroup.ContainsKey(crop))
-				return ;
 
-			Group newGroup = new Group();
+			if (allThingsInAGroup.ContainsKey(crop))
+				return;
+
+			List<Plant> list = new List<Plant>();
 
 			try
 			{
-				Iterate(crop, newGroup);
+				_Iterate(crop, list);
 
 				//newGroup.TickLong();
 			}
-			catch (StackOverflowException ex)
+			catch (Exception ex)
 			{
-				Log.Warning("failed to create group from crop " + crop + " : " + ex.Message + ".");
+				Log.Warning("failed to create group from crop " + crop + " at " + crop.Position + " : " + ex.Message + ". " + ex.StackTrace);
+				return;
 			}
 
-			if (newGroup.Count > 1)
-			{
-				newGroup.PostProcess();
-			}
+			Group newGroup;
+			if(list.Count > 0)
+			newGroup = new Group(list);
+
+			//if (newGroup.Count > 1)
+			//{
+			//	newGroup.PostProcess();
+			//}
 
 
 		}
 
-		static void Iterate(Plant crop,Group group)
+		static void _Iterate(Plant crop, List<Plant> list)
 		{
-			if (!group.TryAdd(crop))
+			if (list.Count > 0 && list[0].def != crop.def)
 				return;
+
+			//if (list.Contains(crop))
+			//	return;
+
+			if (GroupsUtils.allListedPlants.Contains(crop))
+				return;
+
+			GroupsUtils.allListedPlants.Add(crop);
+			list.Add(crop);
 
 			foreach (IntVec3 cell in crop.CellsAdjacent8WayAndInside())
 			{
 				Plant thingAtCell = cell.GetPlant(crop.Map);
 
-				if (thingAtCell != null && crop.GrowthRateFactor_Light == thingAtCell.GrowthRateFactor_Light && crop.GrowthRateFactor_Fertility == thingAtCell.GrowthRateFactor_Fertility)
-					Iterate(thingAtCell, group);
+				if (thingAtCell != null && 
+				    crop.GrowthRateFactor_Light == thingAtCell.GrowthRateFactor_Light && 
+				    crop.GrowthRateFactor_Fertility == thingAtCell.GrowthRateFactor_Fertility) 
+					
+				_Iterate(thingAtCell, list);
 			}
 		}
 
@@ -96,13 +115,31 @@ namespace WM.SyncGrowth
 
 		public static float GrowthRateCorrection(this Plant plant)
 		{
-			if (!allThingsInAGroup.ContainsKey(plant))
-				return 1f;
+			Group group = plant.Group();
 
-			Group group = allThingsInAGroup[plant];
+			if (group == null)
+				return 1f;
 
 			return group.GrowthRateCorrectionFor(plant);
 			//return 0f;
+		}
+
+		public static int GroupIndex(this Plant plant)
+		{
+			return allGroups.IndexOf(allThingsInAGroup[plant]);
+			//return 0f;
+		}
+
+		public static Group Group(this Plant plant)
+		{
+			try
+			{
+				return allGroups[plant.GroupIndex()];
+			}
+			catch (KeyNotFoundException)
+			{
+				return null;
+			}
 		}
 
 		public static float TicksUntilFullyGrown(this Plant plant)

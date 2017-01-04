@@ -18,6 +18,8 @@ namespace WM.SyncGrowth
 				return modName;
 			}
 		}
+
+		private static SettingHandle<bool> drawGroups;
 		//public override void DefsLoaded()
 		//{
 		//	DefDatabase<ThingDef>.GetNamed("PlantBase").thingClass = typeof(WM.SyncGrowth.Detour.Plant);

@@ -8,17 +8,19 @@ namespace WM.SyncGrowth
 {
 	public class Group
 	{
+		// should be constant ?
+		private static InvalidOperationException notPostProcessedYet = new InvalidOperationException("Crops group hasn't been post processed yet.");
+		private static InvalidOperationException alreadyPostProcessed = new InvalidOperationException("Crops has already been post processed.");
+
 		public const float maxGap = 0.08f;
 
-		private int lastTicked = 0;
-
-		float maxGrowth;
-		float minGrowth;
+		float maxGrowth = 0;
+		float minGrowth = 1;
 
 		float avgGrowth;
 
-		protected List<RimWorld.Plant> plants = new List<RimWorld.Plant>();
-		protected List<float> correctionRates = new List<float>();
+		internal List<RimWorld.Plant> plants = new List<RimWorld.Plant>();
+		internal List<float> correctionRates = new List<float>();
 
 		//protected List<RimWorld.Plant> sortedPlants = new List<RimWorld.Plant>();
 
@@ -42,48 +44,87 @@ namespace WM.SyncGrowth
 			}
 		}
 
-		public Group(List<RimWorld.Plant> argSortedPlants = null)
+		public float MaxGrowth
+		{
+			get
+			{
+				if (!postProcessDone)
+					throw notPostProcessedYet;
+				return maxGrowth;
+			}
+		}
+
+		public float MinGrowth
+		{
+			get
+			{
+				if (!postProcessDone)
+					throw notPostProcessedYet;
+				return minGrowth;
+			}
+		}
+
+		public int Index
+		{
+			get
+			{
+				return GroupsUtils.allGroups.IndexOf(this);
+			}
+		}
+
+		public Group(List<RimWorld.Plant> argPlants) // must be a sorted list
 		{
 			GroupsUtils.allGroups.Add(this);
 
+			//if (argPlants == null)
+			//{
+			//	//Log.Message("created empty group of crops.");
+			//	return;
+			//}
 
-			if (argSortedPlants == null)
-			{
-				//Log.Message("created empty group of crops.");
-				return;
-			}
+			plants = argPlants.ToList();
 
-			plants = argSortedPlants;
+			//maxGrowth = plants.First().Growth;
+			//minGrowth = plants.Last().Growth;
+				
+			this.PostProcess();
 
-			maxGrowth = plants.First().Growth;
-			minGrowth = plants.Last().Growth;
-
-			//Log.Message("created group of " + def+ " with " + argSortedPlants.Count + " crops.");
+			Log.Message("created group of " + def.label + " with " + plants.Count + " crops.");
 		}
 
-		public bool TryAdd(Plant plant)
-		{
-			if (postProcessDone)
+		//public bool TryAdd(Plant plant)
+		//{
+		//	if (postProcessDone)
 
-				throw new InvalidOperationException("Tried to add a crop to a group that is locked because it has already been post processed");
+		//		throw alreadyPostProcessed;
 
-			if (Count > 0 && def != plant.def)
-				return false;
+		//	if (Count > 0 && def != plant.def)
+		//		return false;
 
-			//if ( Math.Abs(minGrowth - plant.Growth) > maxGap || Math.Abs(maxGrowth - plant.Growth) > maxGap  )
-			//	return false;
+		//	//if ( Math.Abs(minGrowth - plant.Growth) > maxGap || Math.Abs(maxGrowth - plant.Growth) > maxGap  )
+		//	//	return false;
 
-			if (plants.Contains(plant) || GroupsUtils.allThingsInAGroup.ContainsKey(plant))
-				return false;
+		//	if (plants.Contains(plant) || GroupsUtils.allListedPlants.Contains(plant))
+		//		return false;
 
-			plants.Add(plant);
-			GroupsUtils.allThingsInAGroup.Add(plant, this);
+		//	plants.Add(plant);
+		//	GroupsUtils.allListedPlants.Add(plant);
 
-			maxGrowth = Math.Max(maxGrowth, plant.Growth);
-			minGrowth = Math.Min(minGrowth, plant.Growth);
+		//	//maxGrowth = Math.Max(maxGrowth, plant.Growth);
+		//	//minGrowth = Math.Min(minGrowth, plant.Growth); 
 
-			return true;
-		}
+		//	//if (maxGrowth != null)
+		//	//	maxGrowth = Math.Max(maxGrowth, plant.Growth);
+		//	//else
+		//	//	maxGrowth = plant.Growth;
+
+		//	//if (minGrowth != null)
+		//	//	minGrowth = Math.Min(minGrowth, plant.Growth);
+		//	//else
+		//	//	minGrowth = plant.Growth;
+
+		//	return true;
+		//}
 
 		internal float GrowthCorrectionFor(Plant plant)
 		{
@@ -133,9 +174,11 @@ namespace WM.SyncGrowth
 			//			return delta * 2000;
 
 			if(!postProcessDone)
+				
 				return 1f;
 			
 			if (!plants.Contains(plant))
+				
 				return 1f;
 
 			return 1 + correctionRates[plants.IndexOf(plant)];
@@ -145,39 +188,55 @@ namespace WM.SyncGrowth
 		{
 			if (postProcessDone)
 
-				throw new InvalidOperationException("trying to post process a group that was already post processed");
+				throw alreadyPostProcessed;
 
-			plants = plants.OrderBy((arg) => arg.Growth).ToList();
+			plants = plants.OrderBy((Plant arg) => arg.Growth).ToList();
+
+			// should not be needed
+			//plants.RemoveDuplicates();
+
+			maxGrowth = plants.Max((Plant arg) => arg.Growth);
+			minGrowth = plants.Min((Plant arg) => arg.Growth);
 
 			if (maxGrowth - minGrowth > maxGap)
 			{
-				List<Plant> bottomList = plants;
-				List<Plant> newList;
-				Group newGroup = this;
+				List<Plant> newList = plants.Where((Plant obj) => obj.Growth < this.maxGrowth - maxGap).ToList();
 
-				while (bottomList.Count > 0)
+				if (newList.Count > 0)
 				{
-					newList = bottomList.Where((Plant obj) => obj.Growth < newGroup.maxGrowth - maxGap).ToList();
+					Group newGroup = new Group(newList);
 
-					if (newList.Count > 0)
-					{
-						newGroup = new Group(newList);
+					// ducktapestan 
 
-						//bottomList.RemoveAll((Plant obj) => obj.Growth < newGroup.maxGrowth - maxGap);
-						bottomList.RemoveRange(bottomList.Count - newList.Count,newList.Count);
+					//bottomList.RemoveAll((Plant obj) => obj.Growth < newGroup.maxGrowth - maxGap);
+					//plants.RemoveRange(plants.Count - newList.Count,newList.Count);
+					plants.RemoveAll((Plant obj) => newList.Contains(obj));
 #if DEBUG
-						//Log.Message("Splitting group of " + def + " for " + newList.Count + " and " + bottomList.Count + " crops");
+					Log.Message("Splitting group #"+newGroup.Index+" of " + def + " for " + newList.Count + " and " + plants.Count + " crops");
 #endif
-					}
 
-					bottomList = newList;
 				}
+
+				maxGrowth = plants.Max((Plant arg) => arg.Growth);
+				minGrowth = plants.Min((Plant arg) => arg.Growth);
 
 			}
 
+			int duplicates = 0;
+
 			foreach (Plant current in plants)
 			{
+				if (!GroupsUtils.allThingsInAGroup.ContainsKey(current))
+					GroupsUtils.allThingsInAGroup.Add(current, this);
+				else
+					duplicates++;
+
 				avgGrowth += current.Growth;
+			}
+
+			if (duplicates > 0)
+			{
+				Log.Error("Crops group #" + this.Index + " has " + duplicates + " crops already listed in another group. Please contact the mod author.");
 			}
 
 			avgGrowth /= plants.Count;

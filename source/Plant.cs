@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using HugsLib.Source.Detour;
 using RimWorld;
 using UnityEngine;
@@ -44,6 +45,8 @@ namespace WM.SyncGrowth.Detour
 			//float growthBefore = this.Growth;
 
 			GroupsUtils.TryCreateCropsGroup(this);
+
+			//this.DebugDraw();
 
 			//this.Growth += GroupsUtils.GrowthCorrectionFor(this) * this.GrowthRate;
 
@@ -113,5 +116,85 @@ namespace WM.SyncGrowth.Detour
 			this.cachedLabelMouseover = null;
 		}
 
+		[DetourMethod(typeof(RimWorld.Plant), "GetInspectString")]
+		public override string GetInspectString()
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+
+			// I use keep it but this will CRASH the game without even a crash report...
+			// and it seems not to affect the vanilla inspect string...
+
+			//stringBuilder.Append(base.GetInspectString());
+			//stringBuilder.Append(
+			//	(string)typeof(Thing).GetMethod("GetInspectString",Helpers.AllBindingFlags).Invoke(this, new object[] { })
+			//);
+			;
+			if (this.LifeStage == PlantLifeStage.Growing)
+			{
+				stringBuilder.AppendLine("PercentGrowth".Translate(new object[]
+				{
+					this.GrowthPercentString
+				}));
+				stringBuilder.AppendLine("GrowthRate".Translate() + ": " + this.GrowthRate.ToStringPercent());
+				if (this.Resting)
+				{
+					stringBuilder.AppendLine("PlantResting".Translate());
+				}
+				if (!this.HasEnoughLightToGrow)
+				{
+					stringBuilder.AppendLine("PlantNeedsLightLevel".Translate() + ": " + this.def.plant.growMinGlow.ToStringPercent());
+				}
+				float growthRateFactor_Temperature = this.GrowthRateFactor_Temperature;
+				if (growthRateFactor_Temperature < 0.99f)
+				{
+					if (growthRateFactor_Temperature < 0.01f)
+					{
+						stringBuilder.AppendLine("OutOfIdealTemperatureRangeNotGrowing".Translate());
+					}
+					else
+					{
+						stringBuilder.AppendLine("OutOfIdealTemperatureRange".Translate(new object[]
+						{
+							Mathf.RoundToInt(growthRateFactor_Temperature * 100f).ToString()
+						}));
+					}
+				}
+			}
+			else if (this.LifeStage == PlantLifeStage.Mature)
+			{
+				if (this.def.plant.Harvestable)
+				{
+					stringBuilder.AppendLine("ReadyToHarvest".Translate());
+				}
+				else
+				{
+					stringBuilder.AppendLine("Mature".Translate());
+				}
+			}
+
+			// --------------- mod -------------------
+			Group group = this.Group();
+			if (group == null)
+			{
+				GroupsUtils.TryCreateCropsGroup(this);
+				group = this.Group();
+			}
+
+			if (group != null)
+			{
+				stringBuilder.AppendLine("SyncGrowth: Group #" + GroupsUtils.allGroups.IndexOf(group) + " (" + group.plants.Count + " crops)");
+
+#if DEBUG
+				stringBuilder.AppendLine("SyncGrowth debug: Group min: " + group.MinGrowth.ToStringPercent() + " ; max:" + group.MaxGrowth.ToStringPercent());
+
+				// TODO: works very pooly, should be upgraded
+				this.DebugDrawGroup();
+#endif
+			}
+
+			// --------------- mod end -------------------
+
+			return stringBuilder.ToString();
+		}
 	}
 }
