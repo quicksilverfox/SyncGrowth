@@ -113,14 +113,14 @@ namespace WM.SyncGrowth
 		//	return group.GrowthCorrectionFor(plant);
 		//}
 
-		public static float GrowthRateCorrection(this Plant plant)
+		public static float GrowthCorrectionMultiplier(this Plant plant)
 		{
 			Group group = plant.Group();
 
 			if (group == null)
 				return 1f;
 
-			return group.GrowthRateCorrectionFor(plant);
+			return group.GrowthCorrectionMultiplierFor(plant);
 			//return 0f;
 		}
 

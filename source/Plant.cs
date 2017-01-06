@@ -30,11 +30,11 @@ namespace WM.SyncGrowth.Detour
 		//}
 
 		[DetourProperty(typeof(RimWorld.Plant), "GrowthRate", DetourProperty.Getter)]
-		public virtual float _GrowthRate
+		public override float GrowthRate
 		{
 			get
 			{
-				return (this.GrowthRateFactor_Fertility * this.GrowthRateFactor_Temperature * this.GrowthRateFactor_Light) * this.GrowthRateCorrection();
+				return (this.GrowthRateFactor_Fertility * this.GrowthRateFactor_Temperature * this.GrowthRateFactor_Light) * this.GrowthCorrectionMultiplier();
 			}
 		}
 
@@ -51,6 +51,7 @@ namespace WM.SyncGrowth.Detour
 			//this.Growth += GroupsUtils.GrowthCorrectionFor(this) * this.GrowthRate;
 
 			TickLong_base();
+			//base.TickLong();
 		}
 
 		// RimWorld.Plant
@@ -121,8 +122,38 @@ namespace WM.SyncGrowth.Detour
 		{
 			StringBuilder stringBuilder = new StringBuilder();
 
-			// I use keep it but this will CRASH the game without even a crash report...
-			// and it seems not to affect the vanilla inspect string...
+			stringBuilder.Append(GetInspectString_base());
+
+			// --------------- mod -------------------
+			Group group = this.Group();
+			if (group == null)
+			{
+				GroupsUtils.TryCreateCropsGroup(this);
+				group = this.Group();
+			}
+
+			if (group != null)
+			{
+				stringBuilder.AppendLine("SyncGrowth: Group #" + GroupsUtils.allGroups.IndexOf(group) + " (" + group.plants.Count + " crops) Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
+
+#if DEBUG
+				stringBuilder.AppendLine("SyncGrowth debug: Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
+
+				// TODO: works very pooly, should be upgraded
+				this.DebugDrawGroup();
+#endif
+			}
+
+			// --------------- mod end -------------------
+
+			return stringBuilder.ToString();
+		}
+
+		public string GetInspectString_base()
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+
+			// this will CRASH the game without even a crash report...
 
 			//stringBuilder.Append(base.GetInspectString());
 			//stringBuilder.Append(
@@ -135,7 +166,15 @@ namespace WM.SyncGrowth.Detour
 				{
 					this.GrowthPercentString
 				}));
-				stringBuilder.AppendLine("GrowthRate".Translate() + ": " + this.GrowthRate.ToStringPercent());
+				// ----------- mod ------------
+				string modifierString = "";
+				if (this.Group() != null)
+				{
+					float multiplier = this.GrowthCorrectionMultiplier();
+					modifierString = " (" + ((multiplier - 1) * this.GrowthRate).ToString("+0%;-0%") + ")";
+				}
+				stringBuilder.AppendLine("GrowthRate".Translate() + ": " + this.GrowthRate.ToStringPercent() + modifierString);
+				// ------------- mod end --------------
 				if (this.Resting)
 				{
 					stringBuilder.AppendLine("PlantResting".Translate());
@@ -171,28 +210,6 @@ namespace WM.SyncGrowth.Detour
 					stringBuilder.AppendLine("Mature".Translate());
 				}
 			}
-
-			// --------------- mod -------------------
-			Group group = this.Group();
-			if (group == null)
-			{
-				GroupsUtils.TryCreateCropsGroup(this);
-				group = this.Group();
-			}
-
-			if (group != null)
-			{
-				stringBuilder.AppendLine("SyncGrowth: Group #" + GroupsUtils.allGroups.IndexOf(group) + " (" + group.plants.Count + " crops)");
-
-#if DEBUG
-				stringBuilder.AppendLine("SyncGrowth debug: Group min: " + group.MinGrowth.ToStringPercent() + " ; max:" + group.MaxGrowth.ToStringPercent());
-
-				// TODO: works very pooly, should be upgraded
-				this.DebugDrawGroup();
-#endif
-			}
-
-			// --------------- mod end -------------------
 
 			return stringBuilder.ToString();
 		}
