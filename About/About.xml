@@ -4,9 +4,10 @@
   <author>Wishmaster</author>
   <targetversion>0.16.1393</targetversion>
   <description>
-	Requires HugsLib.
+&lt;color=orange&gt;&lt;b&gt;Requires HugsLib.&lt;/b&gt;&lt;/color&gt; 
 
-	Helps your crops to be mature at the same time.
+Helps your crops to be mature at the same time by redistributing the growth rate.
+Plants must not exceed 8% of grown gap. 
   </description>
 	<url>https://ludeon.com/forums/index.php?topic=27315.0</url>
 </ModMetaData>
