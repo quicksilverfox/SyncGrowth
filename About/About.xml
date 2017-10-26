@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>Sync growth</name>
+  <name>WM Sync growth</name>
   <author>Wishmaster</author>
-  <targetversion>0.16.1393</targetversion>
+  <targetversion>0.17.1548</targetversion>
   <description>
 &lt;color=orange&gt;&lt;b&gt;Requires HugsLib.&lt;/b&gt;&lt;/color&gt; 
 
-Helps your crops to be mature at the same time by redistributing the growth rate.
+Helps your crops to be mature at the same time by magically redistributing the growth rate.
 Plants must not exceed 8% of grown gap. 
   </description>
 	<url>https://ludeon.com/forums/index.php?topic=27315.0</url>

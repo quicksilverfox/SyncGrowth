@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using UnityEngine;
+using System.Linq;
 
 namespace WM.SyncGrowth
 {
@@ -17,9 +18,10 @@ namespace WM.SyncGrowth
 		//	dummy = ThingMaker.MakeThing(def);
 		//}
 
-		public static void DebugDrawGroup(this Plant plant)
+		public static void DebugDrawGroups(this Plant plant)
 		{
-			Group group = plant.Group();
+			
+			Group group = plant.GroupOf();
 			if (group != null)
 			{
 				Color groupColor = GroupColor(group.Index);
@@ -32,23 +34,13 @@ namespace WM.SyncGrowth
 
 		private static Color GroupColor(int id)
 		{
-			if (colors == null)
-				
-				MakeColorsList(50);
-			
-			return colors[id];
+			int n;
+			n = colors.Length - (colors.Length % id);
+
+			return colors[n];
 		}
 
-		static List<Color> colors;
+		static readonly Color[] colors = { new Color(80, 0, 0),new Color(0, 80, 0),new Color(0, 0, 80) };
 
-		private static void MakeColorsList(int count)
-		{
-			colors = new List<Color>();
-
-			for (int i = 0; i < count; i++)
-			{
-				colors.Add(new Color(Rand.Value, Rand.Value , Rand.Value, 0.3f ));
-			}
-		}
 	}
 }

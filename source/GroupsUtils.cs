@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using HugsLib.Source.Detour;
 using RimWorld;
 using Verse;
 
@@ -42,7 +41,13 @@ namespace WM.SyncGrowth
 		{
 			Reset();
 
-			if (crop.def.ingestible.foodType == FoodTypeFlags.Tree || crop.def.plant.reproduces || blacklist.Contains(crop.def))
+			var zone = crop.Map.zoneManager.ZoneAt(crop.Position);
+			var ingestible = crop.def.ingestible;
+			var plant = crop.def.plant;
+
+			if ((ingestible != null && ingestible.foodType == FoodTypeFlags.Tree) || (plant == null || plant.reproduces) || blacklist.Contains(crop.def) ||
+			    zone != null && !(zone is Zone_Growing)
+			   )
 				return;
 
 			//if (crop.Position.GetZone(crop.Map) == null && (crop.Position.GetFirstBuilding(crop.Map) == null || crop.Position.GetFirstBuilding(crop.Map).def != ThingDef.Named("HydroponicsBasin") ) )
@@ -66,8 +71,8 @@ namespace WM.SyncGrowth
 			}
 
 			Group newGroup;
-			if(list.Count > 0)
-			newGroup = new Group(list);
+			if (list.Count > 0)
+				newGroup = new Group(list);
 
 			//if (newGroup.Count > 1)
 			//{
@@ -93,13 +98,18 @@ namespace WM.SyncGrowth
 
 			foreach (IntVec3 cell in crop.CellsAdjacent8WayAndInside())
 			{
-				Plant thingAtCell = cell.GetPlant(crop.Map);
+				Plant thingAtCell;
 
-				if (thingAtCell != null && 
-				    crop.GrowthRateFactor_Light == thingAtCell.GrowthRateFactor_Light && 
-				    crop.GrowthRateFactor_Fertility == thingAtCell.GrowthRateFactor_Fertility) 
-					
-				_Iterate(thingAtCell, list);
+				if (cell.InBounds(crop.Map))
+				{
+					thingAtCell = cell.GetPlant(crop.Map);
+
+					if (thingAtCell != null &&
+						crop.GrowthRateFactor_Light == thingAtCell.GrowthRateFactor_Light &&
+						crop.GrowthRateFactor_Fertility == thingAtCell.GrowthRateFactor_Fertility)
+
+						_Iterate(thingAtCell, list);
+				}
 			}
 		}
 
@@ -115,7 +125,7 @@ namespace WM.SyncGrowth
 
 		public static float GrowthCorrectionMultiplier(this Plant plant)
 		{
-			Group group = plant.Group();
+			Group group = plant.GroupOf();
 
 			if (group == null)
 				return 1f;
@@ -130,7 +140,7 @@ namespace WM.SyncGrowth
 			//return 0f;
 		}
 
-		public static Group Group(this Plant plant)
+		public static Group GroupOf(this Plant plant)
 		{
 			try
 			{
@@ -144,12 +154,12 @@ namespace WM.SyncGrowth
 
 		public static float TicksUntilFullyGrown(this Plant plant)
 		{
-			return (int)typeof(RimWorld.Plant).GetProperty("TicksUntilFullyGrown", Helpers.AllBindingFlags).GetValue(plant, null);
+			return (int)typeof(RimWorld.Plant).GetProperty("TicksUntilFullyGrown", Harmony.AccessTools.all).GetValue(plant, null);
 		}
 
 		public static float GrowthPerTick(this Plant plant)
 		{
-			return (int)typeof(RimWorld.Plant).GetProperty("GrowthPerTick", Helpers.AllBindingFlags).GetValue(plant, null);
+			return (int)typeof(RimWorld.Plant).GetProperty("GrowthPerTick", Harmony.AccessTools.all).GetValue(plant, null);
 		}
 	}
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using HugsLib.Source.Detour;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -13,11 +12,11 @@ namespace WM.SyncGrowth.Detour
 		{
 			get
 			{
-				return (string)typeof(RimWorld.Plant).GetField("cachedLabelMouseover", Helpers.AllBindingFlags).GetValue(this);
+				return (string)typeof(RimWorld.Plant).GetField("cachedLabelMouseover", Harmony.AccessTools.all).GetValue(this);
 			}
 			set
 			{
-				typeof(RimWorld.Plant).GetField("cachedLabelMouseover", Helpers.AllBindingFlags).SetValue(this, value);
+				typeof(RimWorld.Plant).GetField("cachedLabelMouseover", Harmony.AccessTools.all).SetValue(this, value);
 			}
 		}
 
@@ -29,125 +28,116 @@ namespace WM.SyncGrowth.Detour
 		//	}
 		//}
 
-		[DetourProperty(typeof(RimWorld.Plant), "GrowthRate", DetourProperty.Getter)]
-		public override float GrowthRate
-		{
-			get
-			{
-				return (this.GrowthRateFactor_Fertility * this.GrowthRateFactor_Temperature * this.GrowthRateFactor_Light) * this.GrowthCorrectionMultiplier();
-			}
-		}
-
 		// RimWorld.Plant
-		[DetourMethod(typeof(RimWorld.Plant), "TickLong")]
-		public override void TickLong()
-		{
-			//float growthBefore = this.Growth;
+		//[DetourMethod(typeof(RimWorld.Plant), "TickLong")]
+		//public override void TickLong()
+		//{
+		//	//float growthBefore = this.Growth;
 
-			GroupsUtils.TryCreateCropsGroup(this);
+		//	GroupsUtils.TryCreateCropsGroup(this);
 
-			//this.DebugDraw();
+		//	//this.DebugDraw();
 
-			//this.Growth += GroupsUtils.GrowthCorrectionFor(this) * this.GrowthRate;
+		//	//this.Growth += GroupsUtils.GrowthCorrectionFor(this) * this.GrowthRate;
 
-			TickLong_base();
-			//base.TickLong();
-		}
+		//	TickLong_base();
+		//	//base.TickLong();
+		//}
 
-		// RimWorld.Plant
-		public void TickLong_base()
-		{
-			this.CheckTemperatureMakeLeafless();
-			if (base.Destroyed)
-			{
-				return;
-			}
-			if (GenPlant.GrowthSeasonNow(base.Position, base.Map))
-			{
-				if (!this.HasEnoughLightToGrow)
-				{
-					this.unlitTicks += 2000;
-				}
-				else
-				{
-					this.unlitTicks = 0;
-				}
-				float num = this.growthInt;
-				bool flag = this.LifeStage == PlantLifeStage.Mature;
-				this.growthInt += this.GrowthPerTick * 2000f;
-				if (this.growthInt > 1f)
-				{
-					this.growthInt = 1f;
-				}
-				if (((!flag && this.LifeStage == PlantLifeStage.Mature) || (int)(num * 10f) != (int)(this.growthInt * 10f)) && this.CurrentlyCultivated())
-				{
-					base.Map.mapDrawer.MapMeshDirty(base.Position, MapMeshFlag.Things);
-				}
-				if (this.def.plant.LimitedLifespan)
-				{
-					this.ageInt += 2000;
-					if (this.Dying)
-					{
-						Map map = base.Map;
-						bool isCrop = this.IsCrop;
-						int amount = Mathf.CeilToInt(10f);
-						base.TakeDamage(new DamageInfo(DamageDefOf.Rotting, amount, -1f, null, null, null));
-						if (base.Destroyed)
-						{
-							if (isCrop && this.def.plant.Harvestable && MessagesRepeatAvoider.MessageShowAllowed("MessagePlantDiedOfRot-" + this.def.defName, 240f))
-							{
-								Messages.Message("MessagePlantDiedOfRot".Translate(new object[]
-								{
-							this.Label
-								}).CapitalizeFirst(), new TargetInfo(base.Position, map, false), MessageSound.Negative);
-							}
-							return;
-						}
-					}
-				}
-				if (this.def.plant.reproduces && this.growthInt >= 0.6f && Rand.MTBEventOccurs(this.def.plant.reproduceMtbDays, 60000f, 2000f))
-				{
-					if (!GenPlant.SnowAllowsPlanting(base.Position, base.Map))
-					{
-						return;
-					}
-					GenPlantReproduction.TryReproduceFrom(base.Position, this.def, SeedTargFindMode.Reproduce, base.Map);
-				}
-			}
-			this.cachedLabelMouseover = null;
-		}
+		//// RimWorld.Plant
+		//public void TickLong_base()
+		//{
+		//	this.CheckTemperatureMakeLeafless();
+		//	if (base.Destroyed)
+		//	{
+		//		return;
+		//	}
+		//	if (GenPlant.GrowthSeasonNow(base.Position, base.Map))
+		//	{
+		//		if (!this.HasEnoughLightToGrow)
+		//		{
+		//			this.unlitTicks += 2000;
+		//		}
+		//		else
+		//		{
+		//			this.unlitTicks = 0;
+		//		}
+		//		float num = this.growthInt;
+		//		bool flag = this.LifeStage == PlantLifeStage.Mature;
+		//		this.growthInt += this.GrowthPerTick * 2000f;
+		//		if (this.growthInt > 1f)
+		//		{
+		//			this.growthInt = 1f;
+		//		}
+		//		if (((!flag && this.LifeStage == PlantLifeStage.Mature) || (int)(num * 10f) != (int)(this.growthInt * 10f)) && this.CurrentlyCultivated())
+		//		{
+		//			base.Map.mapDrawer.MapMeshDirty(base.Position, MapMeshFlag.Things);
+		//		}
+		//		if (this.def.plant.LimitedLifespan)
+		//		{
+		//			this.ageInt += 2000;
+		//			if (this.Dying)
+		//			{
+		//				Map map = base.Map;
+		//				bool isCrop = this.IsCrop;
+		//				int amount = Mathf.CeilToInt(10f);
+		//				base.TakeDamage(new DamageInfo(DamageDefOf.Rotting, amount, -1f, null, null, null));
+		//				if (base.Destroyed)
+		//				{
+		//					if (isCrop && this.def.plant.Harvestable && MessagesRepeatAvoider.MessageShowAllowed("MessagePlantDiedOfRot-" + this.def.defName, 240f))
+		//					{
+		//						Messages.Message("MessagePlantDiedOfRot".Translate(new object[]
+		//						{
+		//					this.Label
+		//						}).CapitalizeFirst(), new TargetInfo(base.Position, map, false), MessageSound.Negative);
+		//					}
+		//					return;
+		//				}
+		//			}
+		//		}
+		//		if (this.def.plant.reproduces && this.growthInt >= 0.6f && Rand.MTBEventOccurs(this.def.plant.reproduceMtbDays, 60000f, 2000f))
+		//		{
+		//			if (!GenPlant.SnowAllowsPlanting(base.Position, base.Map))
+		//			{
+		//				return;
+		//			}
+		//			GenPlantReproduction.TryReproduceFrom(base.Position, this.def, SeedTargFindMode.Reproduce, base.Map);
+		//		}
+		//	}
+		//	this.cachedLabelMouseover = null;
+		//}
 
-		[DetourMethod(typeof(RimWorld.Plant), "GetInspectString")]
-		public override string GetInspectString()
-		{
-			StringBuilder stringBuilder = new StringBuilder();
+//		[DetourMethod(typeof(RimWorld.Plant), "GetInspectString")]
+//		public override string GetInspectString()
+//		{
+//			StringBuilder stringBuilder = new StringBuilder();
 
-			stringBuilder.Append(GetInspectString_base());
+//			stringBuilder.Append(GetInspectString_base());
 
-			// --------------- mod -------------------
-			Group group = this.Group();
-			if (group == null)
-			{
-				GroupsUtils.TryCreateCropsGroup(this);
-				group = this.Group();
-			}
+//			// --------------- mod -------------------
+//			Group group = this.GroupOf();
+//			if (group == null)
+//			{
+//				GroupsUtils.TryCreateCropsGroup(this);
+//				group = this.GroupOf();
+//			}
 
-			if (group != null)
-			{
-				stringBuilder.AppendLine("SyncGrowth: Group #" + GroupsUtils.allGroups.IndexOf(group) + " (" + group.plants.Count + " crops) Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
+//			if (group != null)
+//			{
+//				stringBuilder.AppendLine("SyncGrowth: Group #" + GroupsUtils.allGroups.IndexOf(group) + " (" + group.plants.Count + " crops) Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
 
-#if DEBUG
-				stringBuilder.AppendLine("SyncGrowth debug: Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
+//#if DEBUG
+//				stringBuilder.AppendLine("SyncGrowth debug: Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
 
-				// TODO: works very pooly, should be upgraded
-				this.DebugDrawGroup();
-#endif
-			}
+//				// TODO: works very pooly, should be upgraded
+//				this.DebugDrawGroup();
+//#endif
+//			}
 
-			// --------------- mod end -------------------
+//			// --------------- mod end -------------------
 
-			return stringBuilder.ToString();
-		}
+//			return stringBuilder.ToString();
+//		}
 
 		public string GetInspectString_base()
 		{
@@ -168,7 +158,7 @@ namespace WM.SyncGrowth.Detour
 				}));
 				// ----------- mod ------------
 				string modifierString = "";
-				if (this.Group() != null)
+				if (this.GroupOf() != null)
 				{
 					float multiplier = this.GrowthCorrectionMultiplier();
 					modifierString = " (" + ((multiplier - 1) * this.GrowthRate).ToString("+0%;-0%") + ")";

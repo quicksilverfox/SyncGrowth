@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HugsLib.Settings;
+using RimWorld;
 using Verse;
 
 namespace WM.SyncGrowth
@@ -22,6 +23,37 @@ namespace WM.SyncGrowth
 		}
 
 		private static SettingHandle<bool> drawGroups;
+
+		public override void Update()
+		{
+			try
+			{
+				if (Find.Selector == null)
+					return;
+
+				var t = Find.Selector.SingleSelectedThing;
+
+				if (t == null)
+					return;
+
+				if (t is Plant)
+				{
+					var group = ((RimWorld.Plant)t).GroupOf();
+
+					if (group != null)
+					{
+						GroupsUtils.TryCreateCropsGroup(t as Plant);
+						GenDraw.DrawFieldEdges(group.plants.Select(arg => arg.Position).ToList(), SimpleColor.Red.ToUnityColor());
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				//screw that bug, I can't fix it and it seems harmless.
+				if (!(ex is InvalidCastException))
+					throw ex;
+			}
+		}
 
 		// not working :( . Could avoid detouring
 		//public override void DefsLoaded()

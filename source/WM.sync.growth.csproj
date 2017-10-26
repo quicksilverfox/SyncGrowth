@@ -9,6 +9,7 @@
     <AssemblyName>WM SyncGrowth</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <BaseDirectory>..</BaseDirectory>
+    <BaseIntermediateOutputPath>obj</BaseIntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
@@ -20,6 +21,15 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CustomCommands>
+      <CustomCommands>
+        <Command>
+          <type>AfterBuild</type>
+          <command>"D:\jeux\RimWorld\bin\RimWorld_debug\Mods\WM sync growth\deploy.cmd"</command>
+          <externalConsole>True</externalConsole>
+        </Command>
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -28,6 +38,15 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <CustomCommands>
+      <CustomCommands>
+        <Command>
+          <type>AfterBuild</type>
+          <command>"D:\jeux\RimWorld\bin\RimWorld_debug\Mods\WM sync growth\deploy.cmd"</command>
+          <externalConsole>True</externalConsole>
+        </Command>
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -43,9 +62,14 @@
       <HintPath>..\..\..\RimWorldWin_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\HugsLib\Assemblies\0Harmony.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="C:\Program Files %28x86%29\Xamarin Studio\Defs\" />
+    <Folder Include="Detours\" />
+    <Folder Include="Detours\Plant\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="C:\Program Files %28x86%29\Xamarin Studio\Defs\EmptyXmlFile.xml" />
@@ -57,7 +81,10 @@
     <Compile Include="GroupsUtils.cs" />
     <Compile Include="Group.cs" />
     <Compile Include="DebugUtils.cs" />
-    <Compile Include="MapInterface.cs" />
+    <Compile Include="Comp_SyncGrowth.cs" />
+    <Compile Include="Detours\Plant\GrowthRate.cs" />
+    <Compile Include="Detours\Plant\TickLong.cs" />
+    <Compile Include="Detours\Plant\GetInspectString.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
