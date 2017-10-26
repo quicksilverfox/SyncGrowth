@@ -1,8 +1,6 @@
-﻿using System;
-using RimWorld;
+﻿using System.Text;
 using Harmony;
 using Verse;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace WM.SyncGrowth.Detours.Plant
@@ -11,37 +9,31 @@ namespace WM.SyncGrowth.Detours.Plant
 	[HarmonyPatch("GetInspectString")]
 	static class GetInspectString
 	{
-		//		static void Postfix(ref string __result, RimWorld.Plant __instance)
-		//		{
-		//			StringBuilder stringBuilder = new StringBuilder(__result);
+		static void Postfix(ref string __result, RimWorld.Plant __instance)
+		{
+			StringBuilder stringBuilder = new StringBuilder(__result);
+			Group group = __instance.GroupOf();
 
-		//			Regex.Replace(__result,""
+			if (group == null)
+			{
+				return;
+			}
 
-		//			stringBuilder.Append(GetInspectString_base());
+			var regex = new Regex(("GrowthRate".Translate()) + ": [0-9]+%");
+			var delta = (GroupsUtils.GrowthCorrectionMultiplier(__instance) - 1f) * 100f;
 
-		//			// --------------- mod -------------------
-		//			Group group = this.GroupOf();
-		//			if (group == null)
-		//			{
-		//				GroupsUtils.TryCreateCropsGroup(this);
-		//				group = this.GroupOf();
-		//			}
-
-		//			if (group != null)
-		//			{
-		//				stringBuilder.AppendLine("SyncGrowth: Group #" + GroupsUtils.allGroups.IndexOf(group) + " (" + group.plants.Count + " crops) Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
-
-		//#if DEBUG
-		//				stringBuilder.AppendLine("SyncGrowth debug: Growth range: (" + group.MinGrowth.ToStringPercent() + " - " + group.MaxGrowth.ToStringPercent() + ")");
-
-		//				// TODO: works very pooly, should be upgraded
-		//				this.DebugDrawGroup();
-		//#endif
-		//			}
-
-		//			// --------------- mod end -------------------
-
-		//			return stringBuilder.ToString();
-		//		}
+			if (delta >= 1 || delta <= -1)
+				if (regex.IsMatch(__result))
+				{
+					var replace = "$0 (" + delta.ToString("+#;-#") + "%)";
+					__result = regex.Replace(__result, replace);
+				}
+#if DEBUG
+			else
+			{
+				__result = "(regex error)";
+			}
+#endif
+		}
 	}
 }

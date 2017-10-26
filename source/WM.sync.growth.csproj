@@ -76,14 +76,13 @@
     <None Include="C:\Program Files %28x86%29\Xamarin Studio\Defs\EmptyXmlFile.xml" />
     <None Include="..\Mods\WM Sync Growth\About\About.xml" />
     <None Include="..\Mods\WM Sync Growth\Assemblies\WM SyncGrowth.dll" />
+    <None Include="..\Mods\WM Sync Growth\Languages\English\Keyed\Keys.xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
-    <Compile Include="Plant.cs" />
     <Compile Include="GroupsUtils.cs" />
     <Compile Include="Group.cs" />
     <Compile Include="DebugUtils.cs" />
-    <Compile Include="Comp_SyncGrowth.cs" />
     <Compile Include="Detours\Plant\GrowthRate.cs" />
     <Compile Include="Detours\Plant\TickLong.cs" />
     <Compile Include="Detours\Plant\GetInspectString.cs" />
