@@ -79,13 +79,14 @@
     <None Include="..\Mods\WM Sync Growth\Languages\English\Keyed\Keys.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Config.cs" />
+    <Compile Include="ModController.cs" />
     <Compile Include="GroupsUtils.cs" />
     <Compile Include="Group.cs" />
     <Compile Include="DebugUtils.cs" />
     <Compile Include="Detours\Plant\GrowthRate.cs" />
     <Compile Include="Detours\Plant\TickLong.cs" />
     <Compile Include="Detours\Plant\GetInspectString.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

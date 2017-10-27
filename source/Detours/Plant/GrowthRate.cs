@@ -1,7 +1,4 @@
-﻿using System;
-using RimWorld;
-using Harmony;
-using Verse;
+﻿using Harmony;
 
 namespace WM.SyncGrowth.Detours.Plant
 {
@@ -13,10 +10,6 @@ namespace WM.SyncGrowth.Detours.Plant
 		{
 			var v = GroupsUtils.GrowthCorrectionMultiplier(__instance);
 			__result *= v;
-
-			//#if DEBUG
-			//			Log.Message(__instance + " x" + v);
-			//#endif
 		}
 	}
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using RimWorld;
-using Harmony;
-using Verse;
+﻿using Harmony;
 
 namespace WM.SyncGrowth.Detours.Plant
 {
