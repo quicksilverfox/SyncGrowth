@@ -8,7 +8,7 @@ namespace WM.SyncGrowth.Detours.Plant
 	{
 		static void Postfix(ref float __result, RimWorld.Plant __instance)
 		{
-			var v = GroupsUtils.GrowthCorrectionMultiplier(__instance);
+			var v = GroupsUtils.GetGrowthMultiplierFor(__instance);
 			__result *= v;
 		}
 	}

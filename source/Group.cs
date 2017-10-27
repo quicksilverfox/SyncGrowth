@@ -1,30 +1,37 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace WM.SyncGrowth
 {
 	public class Group
 	{
-		// should be constant ?
-		private static InvalidOperationException notPostProcessedYet = new InvalidOperationException("Crops group hasn't been post processed yet.");
-		//private static InvalidOperationException alreadyPostProcessed = new InvalidOperationException("Crops group has already been post processed.");
+		class PlantEntry
+		{
+			internal readonly Plant Plant;
+			internal float multiplier = 1f;
 
-		public const float maxGap = 0.08f;
-		float maxGrowth = 0;
-		float minGrowth = 1;
-		float avgGrowth;
-		internal List<Plant> plants = new List<Plant>();
-		internal List<float> correctionRates = new List<float>();
-		bool postProcessDone = false;
+			internal PlantEntry(Plant plant)
+			{
+				this.Plant = plant;
+			}
+		}
+		readonly List<PlantEntry> plants;
+
+		public Group(IEnumerable<Plant> plants)
+		{
+			this.plants = plants.Select((Plant arg) => new PlantEntry(arg)).ToList();
+			//this.plants.SortBy((arg) => arg.Plant.Growth);
+			this.RefreshRates();
+		}
 
 		public int Count
 		{
 			get
 			{
-				return plants.Count;
+				return (plants.Count);
 			}
 		}
 
@@ -32,149 +39,72 @@ namespace WM.SyncGrowth
 		{
 			get
 			{
-				return (plants.AsEnumerable());
+				return (plants.Select((arg) => arg.Plant).AsEnumerable());
 			}
 		}
 
-		public ThingDef plantDef
+		public ThingDef PlantDef
 		{
 			get
 			{
 				if (!plants.Any())
 					return (null);
-				return (plants.First().def);
+				return (plants.First().Plant.def);
 			}
 		}
 
-		public float MaxGrowth
+		public void RefreshRates()
 		{
-			get
+			var averageGrowth = Plants.Average((Plant arg) => arg.Growth);
+
+			foreach (var item in this.plants)
 			{
-				if (!postProcessDone)
-					throw notPostProcessedYet;
-				return (maxGrowth);
-			}
-		}
-
-		public float MinGrowth
-		{
-			get
-			{
-				if (!postProcessDone)
-					throw notPostProcessedYet;
-				return (minGrowth);
-			}
-		}
-
-		public int Index
-		{
-			get
-			{
-				return GroupsUtils.allGroups.IndexOf(this);
-			}
-		}
-
-		public Group(List<Plant> argPlants) // must be a sorted list
-		{
-			GroupsUtils.allGroups.Add(this);
-			plants = argPlants.ToList();
-			this.PostProcess();
-		}
-
-		internal float GrowthCorrectionFor(Plant plant)
-		{
-			float delta;
-			int longTicksNeeded = (int)((plant.TicksUntilFullyGrown() / 2000f) - 10);
-
-			if (plant.GrowthRate > 0 && longTicksNeeded > 0)
-			{
-				delta = (plant.Growth - avgGrowth) / longTicksNeeded;
+				item.multiplier = CalculateRateFor(item.Plant, averageGrowth);
 #if DEBUG
-				Log.Message("Calculating growth correction for " + plant.def + " (value = " + delta + ") at " + plant.Position + " in group #" + GroupsUtils.allGroups.IndexOf(this));
-#endif
-#if DEBUG
-				Log.Message("longTicksNeeded : " + longTicksNeeded + " (" + (Math.Round(plant.TicksUntilFullyGrown() / 2000f) - 1) + ")");
+				Log.Message("Multiplier for " + item.Plant.Position + " = " + item.multiplier);
 #endif
 			}
-			else
-			{
-				delta = 0;
-			}
-
-			return (delta);
 		}
 
-		internal float GrowthCorrectionMultiplierFor(Plant plant)
+		float CalculateRateFor(Plant plant, float averageGrowth)
 		{
-			if(!postProcessDone)
+			float mult = 1;
+			//float avgticksUntilFullyGrown = Mathf.FloorToInt(averageGrowth / plant.GrowthRate);
+			//int avgLongTicksUntilFullyGrown = Mathf.CeilToInt(avgticksUntilFullyGrown / 2000f);
+			int longTicksUntilFullyGrown = Mathf.CeilToInt(plant.TicksUntilFullyGrown() / 2000f);
+
+			if (plant.GrowthRate > 0 && longTicksUntilFullyGrown > 0)
 			{
-				return 1f;
+				mult += ((averageGrowth - plant.Growth) / longTicksUntilFullyGrown) * 100;
 			}
 
-			if (!plants.Contains(plant))
-			{
-				return 1f;
-			}
-
-			return (1 + correctionRates[plants.IndexOf(plant)]);
+			return (mult);
 		}
 
-		internal void PostProcess()
+		internal float GetGrowthMultiplierFor(Plant plant)
 		{
-			plants = plants.OrderBy((Plant arg) => arg.Growth).ToList();
+			var plantEntry = plants.FirstOrDefault((PlantEntry arg) => arg.Plant == plant);
 
-			// should not be needed
-			//plants.RemoveDuplicates();
+			if (plantEntry != null)
+				return (plantEntry.multiplier);
 
-			maxGrowth = plants.Max((Plant arg) => arg.Growth);
-			minGrowth = plants.Min((Plant arg) => arg.Growth);
+			return (1f);
+		}
 
-			if (maxGrowth - minGrowth > maxGap)
-			{
-				var newList = plants.Where((Plant obj) => obj.Growth < this.maxGrowth - maxGap).ToList();
+		static readonly Color[] colors =
+		{
+			Color.red,
+			Color.yellow,
+			Color.blue,
+			Color.black
+		};
 
-				if (newList.Count > 0)
-				{
-					var newGroup = new Group(newList);
+		public void Draw(int colorSeed)
+		{
+			Color color = colors[(colorSeed % colors.Length)];
+			var cells = this.Plants.Select((Plant arg) => arg.Position).ToList();
 
-					// ducktapestan 
-
-					//bottomList.RemoveAll((Plant obj) => obj.Growth < newGroup.maxGrowth - maxGap);
-					//plants.RemoveRange(plants.Count - newList.Count,newList.Count);
-					plants.RemoveAll((Plant obj) => newList.Contains(obj));
-#if DEBUG
-					Log.Message("Splitting group #"+newGroup.Index+" of " + plantDef + " for " + newList.Count + " and " + plants.Count + " crops");
-#endif
-				}
-
-				maxGrowth = plants.Max((Plant arg) => arg.Growth);
-				minGrowth = plants.Min((Plant arg) => arg.Growth);
-			}
-
-			int duplicates = 0;
-			foreach (Plant current in plants)
-			{
-				if (!GroupsUtils.AllPlantsInGroups.ContainsKey(current))
-					GroupsUtils.AllPlantsInGroups.Add(current, this);
-				else
-					duplicates++;
-
-				avgGrowth += current.Growth;
-			}
-
-			if (duplicates > 0)
-			{
-				Log.Error("Crops group #" + this.Index + " has " + duplicates + " crops already listed in another group. Please contact the mod author.");
-			}
-
-			avgGrowth /= plants.Count;
-
-			for (int i = 0; plants.Count > i; i++)
-			{
-				correctionRates.Add((avgGrowth - plants[i].Growth) * 8);
-			}
-
-			postProcessDone = true;
+			GenDraw.DrawFieldEdges(cells, color);
 		}
 	}
 }

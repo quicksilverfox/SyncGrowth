@@ -1,121 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using RimWorld;
-using Verse;
+﻿using RimWorld;
 
 namespace WM.SyncGrowth
 {
 	public static class GroupsUtils
 	{
-		private static int lastTicked = 0;
-		public static List<Plant> allListedPlants = new List<Plant>();
-		public static List<Group> allGroups = new List<Group>();
-		public static Dictionary<Plant, Group> AllPlantsInGroups = new Dictionary<Plant, Group>();
-
-		private static void Reset()
+		public static float GetGrowthMultiplierFor(Plant plant)
 		{
-			if (lastTicked + 2000 > (Find.TickManager.TicksGame))
-				return;
-#if DEBUG
-			Log.Message("RESET ! had " + allGroups.Count + " groups of crops.");
-#endif
-			lastTicked = Find.TickManager.TicksGame;
-			allListedPlants.Clear();
-			AllPlantsInGroups.Clear();
-			allGroups.Clear();
+			var comp = plant.Map.GetComponent<MapCompGrowthSync>();
+			var result = comp.GetGrowthMultiplierFor(plant);
+
+			return (result);
 		}
 
-		static List<ThingDef> blacklist = new List<ThingDef> 
+		public static Group GroupOf(Plant plant)
 		{
-			ThingDefOf.PlantGrass, 
-			ThingDef.Named("PlantRaspberry") 
-		};
+			var comp = plant.Map.GetComponent<MapCompGrowthSync>();
 
-		public static void TryCreateCropsGroup(Plant crop)
-		{
-			Reset();
-
-			var zone = crop.Map.zoneManager.ZoneAt(crop.Position);
-			var ingestible = crop.def.ingestible;
-			var plant = crop.def.plant;
-
-			if ((ingestible != null && ingestible.foodType == FoodTypeFlags.Tree) || plant == null || plant.reproduces || blacklist.Contains(crop.def) ||
-			    zone != null && !(zone is Zone_Growing))
-				return;
-
-			//if (crop.Position.GetZone(crop.Map) == null && (crop.Position.GetFirstBuilding(crop.Map) == null || crop.Position.GetFirstBuilding(crop.Map).def != ThingDef.Named("HydroponicsBasin") ) )
-			//	return;
-
-			if (AllPlantsInGroups.ContainsKey(crop))
-				return;
-
-			var list = new List<Plant>();
-
-			try
-			{
-				_Iterate(crop, list);
-			}
-			catch (Exception ex)
-			{
-				Log.Warning("failed to create group from crop " + crop + " at " + crop.Position + " : " + ex.Message + ". " + ex.StackTrace);
-				return;
-			}
-
-			Group newGroup;
-			if (list.Any())
-				newGroup = new Group(list);
+			return (comp.GroupOf(plant));
 		}
 
-		static void _Iterate(Plant crop, List<Plant> list)
+		public static bool HasGroup(Plant plant)
 		{
-			if (list.Any() && list.First().def != crop.def)
-				return;
-
-			//if (list.Contains(crop))
-			//	return;
-
-			if (GroupsUtils.allListedPlants.Contains(crop))
-				return;
-
-			GroupsUtils.allListedPlants.Add(crop);
-			list.Add(crop);
-
-			foreach (IntVec3 cell in crop.CellsAdjacent8WayAndInside())
-			{
-				Plant thingAtCell;
-
-				if (!cell.InBounds(crop.Map))
-					continue;
-				
-				thingAtCell = cell.GetPlant(crop.Map);
-
-				if (thingAtCell != null &&
-#pragma warning disable RECS0018 // Comparison of floating point numbers with equality operator
-					crop.GrowthRateFactor_Light == thingAtCell.GrowthRateFactor_Light &&
-					crop.GrowthRateFactor_Fertility == thingAtCell.GrowthRateFactor_Fertility)
-#pragma warning restore RECS0018 // Comparison of floating point numbers with equality operator
-				{
-					_Iterate(thingAtCell, list);
-				}
-			}
-		}
-
-		public static float GrowthCorrectionMultiplier(Plant plant)
-		{
-			Group group = plant.GroupOf();
-
-			if (group == null)
-				return 1f;
-
-			return group.GrowthCorrectionMultiplierFor(plant);
-		}
-
-		public static Group GroupOf(this Plant plant)
-		{
-			var result = AllPlantsInGroups.FirstOrDefault((KeyValuePair<Plant, Group> arg) => arg.Value.Plants.Contains(plant));
-
-			return (result.Value);
+			return (GroupOf(plant) != null);
 		}
 
 		public static float TicksUntilFullyGrown(this Plant plant)
@@ -127,5 +33,6 @@ namespace WM.SyncGrowth
 		{
 			return (int)typeof(Plant).GetProperty("GrowthPerTick", Harmony.AccessTools.all).GetValue(plant, null);
 		}
+
 	}
 }

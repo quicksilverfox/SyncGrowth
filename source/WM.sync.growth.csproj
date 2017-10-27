@@ -82,11 +82,12 @@
     <Compile Include="ModController.cs" />
     <Compile Include="GroupsUtils.cs" />
     <Compile Include="Group.cs" />
-    <Compile Include="DebugUtils.cs" />
     <Compile Include="Detours\Plant\GrowthRate.cs" />
     <Compile Include="Detours\Plant\TickLong.cs" />
     <Compile Include="Detours\Plant\GetInspectString.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="MapCompGrowthSync.cs" />
+    <Compile Include="GroupMaker.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
