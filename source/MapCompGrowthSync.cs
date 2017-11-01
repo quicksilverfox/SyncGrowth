@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using RimWorld;
 using Verse;
@@ -48,13 +49,17 @@ namespace WM.SyncGrowth
 
 			foreach (Plant item in plants)
 			{
+#if DEBUG
+				var timer = Stopwatch.StartNew();
+#endif
 				var group = GroupMaker.TryCreateGroup(item);
 
 				if (group != null)
 				{
 					groups.Add(group);
 #if DEBUG
-					Log.Message("Created group of " + group.Count + " " + group.PlantDef);
+					timer.Stop();
+					Log.Message("Created group of " + group.Count + " " + group.PlantDef + " (" + timer.Elapsed.TotalMilliseconds.ToString("0.000 ms") + ")");
 #endif
 				}
 			}
