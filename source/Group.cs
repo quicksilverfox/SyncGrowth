@@ -60,9 +60,6 @@ namespace WM.SyncGrowth
 			foreach (var item in this.plants)
 			{
 				item.multiplier = CalculateRateFor(item.Plant, averageGrowth);
-#if DEBUG
-				Log.Message("Multiplier for " + item.Plant.Position + " = " + item.multiplier);
-#endif
 			}
 		}
 

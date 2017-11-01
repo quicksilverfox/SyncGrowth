@@ -20,11 +20,11 @@ namespace WM.SyncGrowth
 			if (!flashcells && GroupsUtils.HasGroup(crop))
 				return (null);
 
-			var list = new List<Plant>();
+			var list = new HashSet<Plant>();
 
 			try
 			{
-				Iterate(crop, list, crop.Growth, crop.Growth, flashcells);
+				Iterate(crop, list, crop.Growth, crop.Growth, flashcells, IntVec3.Invalid);
 			}
 			catch (Exception ex)
 			{
@@ -32,13 +32,13 @@ namespace WM.SyncGrowth
 				return (null);
 			}
 
-			if (flashcells || !list.Any())
+			if (flashcells || list.Count <= 0)
 				return (null);
 
 			return (new Group(list));
 		}
 
-		static void Iterate(Plant crop, List<Plant> list, float minGrowth, float maxGrowth, bool flashcells)
+		static void Iterate(Plant crop, ICollection<Plant> list, float minGrowth, float maxGrowth, bool flashcells, IntVec3 previous)
 		{
 			if (!CanHaveGroup(crop, flashcells) || list.Contains(crop))
 				return;
@@ -53,7 +53,7 @@ namespace WM.SyncGrowth
 
 			foreach (IntVec3 cell in crop.CellsAdjacent8WayAndInside())
 			{
-				if (!cell.InBounds(crop.Map))
+				if (cell == previous || !cell.InBounds(crop.Map))
 					continue;
 				Plant plantAtCell = cell.GetPlant(crop.Map);
 
@@ -72,7 +72,7 @@ namespace WM.SyncGrowth
 
 					maxGrowth = Math.Max(plantAtCell.Growth, maxGrowth);
 					minGrowth = Math.Min(plantAtCell.Growth, minGrowth);
-					Iterate(plantAtCell, list, minGrowth, maxGrowth, flashcells);
+					Iterate(plantAtCell, list, minGrowth, maxGrowth, flashcells, crop.Position);
 				}
 			}
 		}
