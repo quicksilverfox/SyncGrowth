@@ -21,7 +21,8 @@ namespace WM.SyncGrowth
 
 		public static bool HasGroup(Plant plant)
 		{
-			return (GroupOf(plant) != null);
+			var comp = plant.Map.GetComponent<MapCompGrowthSync>();
+			return (comp.allPlantsInGroup.Contains(plant));
 		}
 
 		public static float TicksUntilFullyGrown(this Plant plant)

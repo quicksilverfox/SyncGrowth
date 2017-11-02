@@ -8,7 +8,8 @@ namespace WM.SyncGrowth
 {
 	public class MapCompGrowthSync : MapComponent
 	{
-		List<Group> groups = new List<Group>();
+		readonly List<Group> groups = new List<Group>();
+		public readonly List<Plant> allPlantsInGroup = new List<Plant>();
 
 		public int Count
 		{
@@ -44,6 +45,7 @@ namespace WM.SyncGrowth
 				return;
 
 			groups.Clear();
+			allPlantsInGroup.Clear();
 
 			var plants = this.map.listerThings.ThingsInGroup(ThingRequestGroup.Plant);
 
@@ -52,7 +54,7 @@ namespace WM.SyncGrowth
 #if DEBUG
 				var timer = Stopwatch.StartNew();
 #endif
-				var group = GroupMaker.TryCreateGroup(item);
+				var group = GroupMaker.TryCreateGroup(this, item);
 
 				if (group != null)
 				{

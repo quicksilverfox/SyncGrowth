@@ -15,7 +15,7 @@ namespace WM.SyncGrowth
 			ThingDef.Named("PlantRaspberry")
 		};
 
-		internal static Group TryCreateGroup(Plant crop, bool flashcells = false)
+		internal static Group TryCreateGroup(MapCompGrowthSync mapComp, Plant crop, bool flashcells = false)
 		{
 			if (!flashcells && GroupsUtils.HasGroup(crop))
 				return (null);
@@ -24,7 +24,8 @@ namespace WM.SyncGrowth
 
 			try
 			{
-				Iterate(crop, list, crop.Growth, crop.Growth, flashcells, IntVec3.Invalid);
+				if (!GroupsUtils.HasGroup(crop))
+					Iterate(mapComp, crop, list, crop.Growth, crop.Growth, flashcells, IntVec3.Invalid);
 			}
 			catch (Exception ex)
 			{
@@ -38,7 +39,7 @@ namespace WM.SyncGrowth
 			return (new Group(list));
 		}
 
-		static void Iterate(Plant crop, ICollection<Plant> list, float minGrowth, float maxGrowth, bool flashcells, IntVec3 previous)
+		static void Iterate(MapCompGrowthSync mapComp, Plant crop, ICollection<Plant> list, float minGrowth, float maxGrowth, bool flashcells, IntVec3 previous)
 		{
 			if (!CanHaveGroup(crop, flashcells) || list.Contains(crop))
 				return;
@@ -50,8 +51,9 @@ namespace WM.SyncGrowth
 			}
 #endif
 			list.Add(crop);
+			mapComp.allPlantsInGroup.Add(crop);
 
-			foreach (IntVec3 cell in crop.CellsAdjacent8WayAndInside())
+			foreach (IntVec3 cell in CellsAdjacent4Way(crop.Position))
 			{
 				if (cell == previous || !cell.InBounds(crop.Map))
 					continue;
@@ -72,9 +74,17 @@ namespace WM.SyncGrowth
 
 					maxGrowth = Math.Max(plantAtCell.Growth, maxGrowth);
 					minGrowth = Math.Min(plantAtCell.Growth, minGrowth);
-					Iterate(plantAtCell, list, minGrowth, maxGrowth, flashcells, crop.Position);
+					Iterate(mapComp, plantAtCell, list, minGrowth, maxGrowth, flashcells, crop.Position);
 				}
 			}
+		}
+
+		public static IEnumerable<IntVec3> CellsAdjacent4Way(IntVec3 seed)
+		{
+			yield return (seed + IntVec3.North);
+			yield return (seed + IntVec3.East);
+			yield return (seed + IntVec3.South);
+			yield return (seed + IntVec3.West);
 		}
 
 		public static bool CanHaveGroup(Plant plant, bool flashcells)

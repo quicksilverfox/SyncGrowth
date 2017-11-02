@@ -31,7 +31,7 @@ namespace WM.SyncGrowth
 #if DEBUG
 					if (KeyBindingDefOf.Misc1.JustPressed)
 					{
-						GroupMaker.TryCreateGroup(t as Plant, true);
+						GroupMaker.TryCreateGroup(Find.VisibleMap.GetComponent<MapCompGrowthSync>(), t as Plant, true);
 					}
 #endif
 					var group = GroupsUtils.GroupOf(t as Plant);
