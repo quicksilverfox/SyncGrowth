@@ -2,6 +2,7 @@
 using Harmony;
 using Verse;
 using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace WM.SyncGrowth.Detours.Plant
 {
@@ -17,11 +18,12 @@ namespace WM.SyncGrowth.Detours.Plant
 			var stringBuilder = new StringBuilder(__result);
 			var regex = new Regex(("GrowthRate".Translate()) + ": [0-9]+%");
 			var delta = (GroupsUtils.GetGrowthMultiplierFor(__instance) - 1f) * 100f;
+			//var shownDelta = Mathf.Round()
 
-			if (delta >= 1 || delta <= -1)
+			if (delta >= 0.5 || delta <= -0.5)
 				if (regex.IsMatch(__result))
 				{
-					var replace = "$0 (" + delta.ToString("+#;-#") + "%)";
+					var replace = "$0 (" + delta.ToString("+##;-##") + "%)";
 					__result = regex.Replace(__result, replace);
 				}
 #if DEBUG
@@ -29,6 +31,7 @@ namespace WM.SyncGrowth.Detours.Plant
 				{
 					__result += "\n(regex error)";
 				}
+			__result += "\nRaw delta = " + delta.ToString();
 			__result += "\nCanHaveGroup() = " + GroupMaker.CanHaveGroup(__instance, true);
 #endif
 		}
