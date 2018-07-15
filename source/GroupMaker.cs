@@ -11,8 +11,8 @@ namespace WM.SyncGrowth
 
 		static List<ThingDef> defsBlacklist = new List<ThingDef>
 		{
-			ThingDefOf.PlantGrass,
-			ThingDef.Named("PlantRaspberry")
+			ThingDefOf.Plant_Grass,
+			ThingDef.Named("Plant_Berry")
 		};
 
 		internal static Group TryCreateGroup(MapCompGrowthSync mapComp, Plant crop, bool flashcells = false)
@@ -94,7 +94,7 @@ namespace WM.SyncGrowth
 
 			if (ingestible == null || ingestible.foodType == FoodTypeFlags.Tree)
 				return (false);
-			if (plantprops == null || plantprops.reproduces || !plantprops.Sowable)
+			if (plantprops == null || !plantprops.Sowable)
 				return (false);
 			if (plant.LifeStage != PlantLifeStage.Growing)
 				return (false);
